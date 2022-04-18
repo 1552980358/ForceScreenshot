@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ForceScreenshot</string>
+    <string name="xposed_description">Screenshot at all applications</string>
+</resources>

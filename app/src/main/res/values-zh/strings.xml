@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">强制截图</string>
+    <string name="xposed_description">想截就截</string>
+</resources>
