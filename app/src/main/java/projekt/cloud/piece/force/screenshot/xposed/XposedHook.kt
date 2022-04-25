@@ -27,6 +27,10 @@ class XposedHook: IXposedHookLoadPackage {
         override fun beforeHookedMethod(param: MethodHookParam?) {
             param?.args?.let {
                 var flags = it[0] as Int
+                if (flags == FLAG_SECURE) {
+                    param.result = null
+                    return
+                }
                 if (flags and FLAG_SECURE == FLAG_SECURE) {
                     flags = flags and FLAG_SECURE.inv()
                 }
