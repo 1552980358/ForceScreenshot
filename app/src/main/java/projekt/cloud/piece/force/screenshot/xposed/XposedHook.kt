@@ -120,7 +120,9 @@ class XposedHook: IXposedHookLoadPackage {
              * make sure [SurfaceView.setSecure] is disabled
              **/
             override fun afterHookedMethod(param: MethodHookParam?) {
-                (param?.thisObject as SurfaceView?)?.setSecure(false)
+                if (param?.args?.get(0) as? Boolean == true) {
+                    (param.thisObject as? SurfaceView)?.setSecure(false)
+                }
             }
         })
     }
