@@ -109,7 +109,11 @@ class XposedHook: IXposedHookLoadPackage {
              **/
             override fun beforeHookedMethod(param: MethodHookParam?) {
                 XposedBridge.log("${TAG}: [$packageName] Hook SurfaceView.$SURFACE_VIEW_SET_SECURE(Boolean)")
-                param?.args?.let { it[0] = false }
+                param?.args?.let {
+                    if (it[0] as? Boolean == true) {
+                        param.result = null
+                    }
+                }
             }
             /**
              * Call after [SurfaceView.setSecure],
