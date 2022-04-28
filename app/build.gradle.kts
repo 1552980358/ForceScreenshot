@@ -17,8 +17,7 @@ android {
     buildTypes {
         @Suppress("UNUSED_VARIABLE")
         val release by getting {
-            isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),"proguard-rules.pro")
+            isMinifyEnabled = false
         }
         @Suppress("UNUSED_VARIABLE")
         val debug by getting {
