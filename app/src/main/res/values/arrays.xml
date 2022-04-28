@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="xposed_scope">
+
+        <!-- Netflix -->
+        <item>com.netflix.mediaclient</item>
+
+        <!-- Paypal -->
+        <item>com.paypal.android.p2pmobile</item>
+
+        <!-- Tencent QQ -->
+        <item>com.tencent.mobileqq</item>
+
+        <!-- Telegram -->
+        <item>org.telegram.messenger</item>
+
+    </string-array>
+
+</resources>
