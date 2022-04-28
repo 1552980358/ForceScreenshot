@@ -26,8 +26,8 @@ class XposedHook: IXposedHookLoadPackage {
     }
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam?) {
-        if (!isSystemApplication(lpparam?.appInfo?.flags ?: return)) {
-            val packageName = lpparam.packageName
+        if (lpparam?.appInfo?.flags?.run { isSystemApplication(this) } != true) {
+            val packageName = lpparam?.packageName
             hookWindow(packageName)
             hookSurfaceView(packageName)
             hookActivity(packageName)
@@ -81,8 +81,22 @@ class XposedHook: IXposedHookLoadPackage {
             override fun beforeHookedMethod(param: MethodHookParam?) {
                 XposedBridge.log("${TAG}: [$packageName] Hook Window.$WINDOW_SET_FLAGS(Int)")
                 param?.args?.let {
-                    it[1] = it[0]
+                    var flags = it[1] as Int
+                    if (flags == FLAG_SECURE) {
+                        return param.setResult(null)
+                    }
+                    if (flags and FLAG_SECURE != 0) {
+                        flags = flags and FLAG_SECURE.inv()
+                        it[1] = flags
+                        it[0] = flags
+                    }
                 }
+            }
+            /**
+             * Make sure [FLAG_SECURE] is disabled
+             **/
+            override fun afterHookedMethod(param: MethodHookParam?) {
+                (param?.thisObject as? Window)?.clearFlags(FLAG_SECURE)
             }
         })
     }
