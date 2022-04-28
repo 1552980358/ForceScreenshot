@@ -25,28 +25,6 @@ class XposedHook: IXposedHookLoadPackage {
         private const val ACTIVITY_SET_CONTENT_VIEW = "setContentView"
     }
 
-    private open class WindowMethodHook: XC_MethodHook() {
-        override fun beforeHookedMethod(param: MethodHookParam?) {
-            param?.args?.let {
-                var flags = it[0] as Int
-                if (flags == FLAG_SECURE) {
-                    param.result = null
-                    return
-                }
-                if (flags and FLAG_SECURE == FLAG_SECURE) {
-                    flags = flags and FLAG_SECURE.inv()
-                }
-                it[0] = flags
-            }
-        }
-        /**
-         * Make sure [FLAG_SECURE] is disabled
-         **/
-        override fun afterHookedMethod(param: MethodHookParam?) {
-            (param?.thisObject as Window?)?.clearFlags(FLAG_SECURE)
-        }
-    }
-
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam?) {
         if (!isSystemApplication(lpparam?.appInfo?.flags ?: return)) {
             val packageName = lpparam.packageName
@@ -69,26 +47,39 @@ class XposedHook: IXposedHookLoadPackage {
         /**
          * Hook [Window.addFlags]
          **/
-        findAndHookMethod(Window::class.java, WINDOW_ADD_FLAGS, Int::class.java, object: WindowMethodHook() {
+        findAndHookMethod(Window::class.java, WINDOW_ADD_FLAGS, Int::class.java, object: XC_MethodHook() {
             /**
              * Call before [Window.addFlags], clear [FLAG_SECURE]
              **/
             override fun beforeHookedMethod(param: MethodHookParam?) {
                 XposedBridge.log("${TAG}: [$packageName] Hook Window.$WINDOW_ADD_FLAGS(Int)")
-                super.beforeHookedMethod(param)
+                param?.args?.let {
+                    val flags = it[0] as Int
+                    if (flags == FLAG_SECURE) {
+                        return param.setResult(null)
+                    }
+                    if (flags and FLAG_SECURE != 0) {
+                        it[0] = flags and FLAG_SECURE.inv()
+                    }
+                }
+            }
+            /**
+             * Make sure [FLAG_SECURE] is disabled
+             **/
+            override fun afterHookedMethod(param: MethodHookParam?) {
+                (param?.thisObject as? Window)?.clearFlags(FLAG_SECURE)
             }
         })
 
         /**
          * Hook [Window.setFlags]
          **/
-        findAndHookMethod(Window::class.java, WINDOW_SET_FLAGS, Int::class.java, Int::class.java, object : WindowMethodHook() {
+        findAndHookMethod(Window::class.java, WINDOW_SET_FLAGS, Int::class.java, Int::class.java, object : XC_MethodHook() {
             /**
              * Call before [Window.setFlags], clear [FLAG_SECURE]
              **/
             override fun beforeHookedMethod(param: MethodHookParam?) {
-                XposedBridge.log("${TAG}: [$packageName] Hook Window.$WINDOW_SET_FLAGS(Int, Int)")
-                super.beforeHookedMethod(param)
+                XposedBridge.log("${TAG}: [$packageName] Hook Window.$WINDOW_SET_FLAGS(Int)")
                 param?.args?.let {
                     it[1] = it[0]
                 }
