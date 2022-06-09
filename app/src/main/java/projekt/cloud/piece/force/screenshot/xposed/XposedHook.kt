@@ -1,8 +1,6 @@
 package projekt.cloud.piece.force.screenshot.xposed
 
 import android.app.Activity
-import android.content.pm.ApplicationInfo.FLAG_SYSTEM
-import android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP
 import android.view.Display
 import android.view.SurfaceView
 import android.view.View
@@ -45,12 +43,6 @@ class XposedHook: IXposedHookLoadPackage {
         hookSurfaceView(packageName)
         hookActivity(packageName)
     }
-
-    /**
-     * Check whether application is system application
-     **/
-    private fun isSystemApplication(flags: Int) =
-        flags and FLAG_SYSTEM == 1 || flags and FLAG_UPDATED_SYSTEM_APP == 1
 
     /**
      * Hook class [Window]
