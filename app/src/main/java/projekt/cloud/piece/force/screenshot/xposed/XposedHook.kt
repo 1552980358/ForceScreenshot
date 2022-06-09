@@ -10,8 +10,10 @@ import android.view.Window
 import android.view.WindowManager.LayoutParams.FLAG_SECURE
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
+import de.robv.android.xposed.XC_MethodReplacement.returnConstant
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers.findAndHookMethod
+import de.robv.android.xposed.XposedHelpers.findClass
 import de.robv.android.xposed.callbacks.XC_LoadPackage
 
 class XposedHook: IXposedHookLoadPackage {
@@ -19,18 +21,28 @@ class XposedHook: IXposedHookLoadPackage {
     companion object {
         private const val TAG = "ForceScreenshotHook"
 
+        private const val ANDROID = "android"
+
         private const val WINDOW_ADD_FLAGS = "addFlags"
         private const val WINDOW_SET_FLAGS = "setFlags"
         private const val SURFACE_VIEW_SET_SECURE = "setSecure"
         private const val ACTIVITY_SET_CONTENT_VIEW = "setContentView"
+
+        private const val IS_SECURE_LOCKED = "isSecureLocked"
+        private const val WINDOW_STATE = "com.android.server.wm.WindowState"
+        private const val WINDOW_MANAGER_SERVICE = "com.android.server.wm.WindowManagerService"
     }
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam?) {
-        if (lpparam?.appInfo?.flags?.run { isSystemApplication(this) } != true) {
-            val packageName = lpparam?.packageName
-            hookWindow(packageName)
-            hookSurfaceView(packageName)
-            hookActivity(packageName)
+        when (val packageName = lpparam?.packageName) {
+            ANDROID -> hookWindowState(lpparam)
+            else -> {
+                if (lpparam?.appInfo?.flags?.run { isSystemApplication(this) } != true) {
+                    hookWindow(packageName)
+                    hookSurfaceView(packageName)
+                    hookActivity(packageName)
+                }
+            }
         }
     }
 
@@ -172,6 +184,23 @@ class XposedHook: IXposedHookLoadPackage {
                 (param?.thisObject as Activity?)?.window?.clearFlags(FLAG_SECURE)
             }
         })
+    }
+
+    /**
+     * Hook window state
+     **/
+    private fun hookWindowState(lpparam: XC_LoadPackage.LoadPackageParam?) {
+        val windowStateClazz = findClass(WINDOW_STATE, lpparam?.classLoader)
+        try {
+            findAndHookMethod(windowStateClazz, IS_SECURE_LOCKED, returnConstant(false))
+        } catch (e: Exception) {
+            XposedBridge.log(e)
+        }
+        try {
+            findAndHookMethod(WINDOW_MANAGER_SERVICE, lpparam?.classLoader, IS_SECURE_LOCKED, windowStateClazz, returnConstant(false))
+        } catch (e: Exception) {
+            XposedBridge.log(e)
+        }
     }
 
 }
