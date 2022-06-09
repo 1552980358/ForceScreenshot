@@ -3,6 +3,9 @@
 
     <string-array name="xposed_scope">
 
+        <!-- ANDROID -->
+        <item>android</item>
+
         <!-- Netflix -->
         <item>com.netflix.mediaclient</item>
 
