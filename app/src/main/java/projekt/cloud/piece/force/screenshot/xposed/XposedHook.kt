@@ -3,10 +3,12 @@ package projekt.cloud.piece.force.screenshot.xposed
 import android.app.Activity
 import android.content.pm.ApplicationInfo.FLAG_SYSTEM
 import android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP
+import android.view.Display
 import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import android.view.WindowManager
 import android.view.WindowManager.LayoutParams.FLAG_SECURE
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
@@ -27,6 +29,10 @@ class XposedHook: IXposedHookLoadPackage {
         private const val WINDOW_SET_FLAGS = "setFlags"
         private const val SURFACE_VIEW_SET_SECURE = "setSecure"
         private const val ACTIVITY_SET_CONTENT_VIEW = "setContentView"
+
+        private const val WINDOW_MANAGER_GLOBAL = "android.view.WindowManagerGlobal"
+        private const val ADD_VIEW = "addView"
+        private const val UPDATE_VIEW_LAYOUT = "updateViewLayout"
 
         private const val IS_SECURE_LOCKED = "isSecureLocked"
         private const val WINDOW_STATE = "com.android.server.wm.WindowState"
@@ -111,6 +117,53 @@ class XposedHook: IXposedHookLoadPackage {
                 (param?.thisObject as? Window)?.clearFlags(FLAG_SECURE)
             }
         })
+    }
+
+    /**
+     * hook WindowManagerGlobal
+     **/
+    private fun hookWindowManagerGlobal(lpparam: XC_LoadPackage.LoadPackageParam?) {
+        val windowManagerGlobalClass = findClass(WINDOW_MANAGER_GLOBAL, lpparam?.classLoader)
+        val windowManagerGlobalAddViewMethodHook = object : XC_MethodHook() {
+            override fun beforeHookedMethod(param: MethodHookParam?) {
+                (param?.args?.get(1) as? WindowManager.LayoutParams)?.let {
+                    it.flags = it.flags and FLAG_SECURE.inv()
+                }
+            }
+        }
+
+        try {
+            findAndHookMethod(
+                windowManagerGlobalClass,
+                ADD_VIEW,
+                View::class.java, ViewGroup.LayoutParams::class.java, Display::class.java, Window::class.java,
+                windowManagerGlobalAddViewMethodHook
+            )
+        } catch (e: Exception) {
+            XposedBridge.log(e)
+        }
+
+        try {
+            findAndHookMethod(
+                windowManagerGlobalClass,
+                ADD_VIEW,
+                View::class.java, ViewGroup.LayoutParams::class.java, Display::class.java, Window::class.java, Int::class.javaPrimitiveType,
+                windowManagerGlobalAddViewMethodHook
+            )
+        } catch (e: Exception) {
+            XposedBridge.log(e)
+        }
+
+        try {
+            findAndHookMethod(
+                windowManagerGlobalClass,
+                UPDATE_VIEW_LAYOUT,
+                View::class.java, ViewGroup.LayoutParams::class.java,
+                windowManagerGlobalAddViewMethodHook
+            )
+        } catch (e: Exception) {
+            XposedBridge.log(e)
+        }
     }
 
     /**
